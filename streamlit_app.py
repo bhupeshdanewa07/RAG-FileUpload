@@ -4,6 +4,8 @@ import streamlit as st
 from pathlib import Path
 import sys
 import time
+import os
+import tempfile
 
 # Add src to path
 sys.path.append(str(Path(__file__).parent))
@@ -151,9 +153,11 @@ def init_session_state():
         st.session_state.last_result = None
     if 'clear_input' not in st.session_state:
         st.session_state.clear_input = False
+    if 'just_generated' not in st.session_state:
+        st.session_state.just_generated = False
 
-@st.cache_resource
-def initialize_rag():
+@st.cache_resource(show_spinner=False)
+def initialize_rag(file_paths):
     """Initialize the RAG system (cached)"""
     try:
         # Initialize components
@@ -164,11 +168,8 @@ def initialize_rag():
         )
         vector_store = VectorStore()
         
-        # Use default URLs
-        urls = Config.DEFAULT_URLS
-        
         # Process documents
-        documents = doc_processor.process_urls(urls)
+        documents = doc_processor.process_sources(list(file_paths))
         
         # Create vector store
         vector_store.create_vectorstore(documents)
@@ -213,14 +214,50 @@ def main():
         </div>
     """, unsafe_allow_html=True)
     
-    # Initialize system
+    # Document Upload Section
     if not st.session_state.initialized:
-        with st.spinner("Loading system..."):
-            rag_system, num_chunks = initialize_rag()
-            if rag_system:
-                st.session_state.rag_system = rag_system
-                st.session_state.initialized = True
-                st.success(f"✅ System ready! ({num_chunks} document chunks loaded)")
+        st.markdown("### 📄 Upload Documents")
+        uploaded_files = st.file_uploader(
+            "Upload PDF or TXT files to create your knowledge base", 
+            type=["pdf", "txt"], 
+            accept_multiple_files=True
+        )
+        
+        process_btn = st.button("Process Documents")
+        
+        if process_btn and uploaded_files:
+            with st.spinner("Processing documents..."):
+                # Create a temp dir
+                temp_dir = tempfile.mkdtemp()
+                file_paths = []
+                
+                for uploaded_file in uploaded_files:
+                    file_path = os.path.join(temp_dir, uploaded_file.name)
+                    with open(file_path, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+                    file_paths.append(file_path)
+                
+                # We use tuple for cache key compatibility
+                rag_system, num_chunks = initialize_rag(tuple(file_paths))
+                
+                if rag_system:
+                    st.session_state.rag_system = rag_system
+                    st.session_state.initialized = True
+                    st.success(f"✅ System ready! ({num_chunks} document chunks loaded)")
+                    st.rerun()
+        elif process_btn and not uploaded_files:
+            st.warning("Please upload at least one file before processing.")
+        elif not st.session_state.initialized:
+            st.info("Please upload documents and click 'Process Documents' to initialize the knowledge base.")
+    else:
+        st.success("✅ System is initialized and ready for your questions!")
+        if st.button("Start Over (Upload New Documents)"):
+            st.session_state.initialized = False
+            st.session_state.rag_system = None
+            st.session_state.history = []
+            st.session_state.last_result = None
+            st.cache_resource.clear()
+            st.rerun()
     
     st.markdown("---")
     
@@ -260,8 +297,9 @@ def main():
                 'time': elapsed_time
             })
             
-            # Flag to clear input and rerun for a clean render
+            # Flag to clear input and view stream effect
             st.session_state.clear_input = True
+            st.session_state.just_generated = True
             st.rerun()
     
     # Render the latest result from session state (flicker-free)
@@ -269,7 +307,27 @@ def main():
         res = st.session_state.last_result
         
         st.markdown("### 💡 Answer")
-        st.success(res['answer'])
+        
+        if st.session_state.just_generated:
+            placeholder = st.empty()
+            full_response = ""
+            import re
+            
+            # Split tokens while preserving all whitespaces/newlines
+            tokens = re.split(r'(\s+)', res['answer'])
+            for token in tokens:
+                full_response += token
+                if token.strip(): # Only pause rendering on actual words
+                    placeholder.success(full_response + "▌")
+                    time.sleep(0.04) # Typewriter speed
+                else:
+                    placeholder.success(full_response + "▌")
+                    # No delay for spaces/newlines
+            
+            placeholder.success(full_response)
+            st.session_state.just_generated = False
+        else:
+            st.success(res['answer'])
         
         with st.expander("📄 Source Documents"):
             for i, doc in enumerate(res['retrieved_docs'], 1):

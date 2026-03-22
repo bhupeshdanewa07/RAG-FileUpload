@@ -74,9 +74,13 @@ class RAGNodes:
         """
         if self._agent is None:
             self._build_agent()
+        context = "\n---\n".join([doc.page_content for doc in state.retrieved_docs])
+        if context.strip():
+            msg_content = f"Here is the context retrieved from the user's uploaded documents:\n{context}\n\nQuestion: {state.question}"
+        else:
+            msg_content = state.question
 
-        result = self._agent.invoke({"messages": [HumanMessage(content=state.question)]})
-
+        result = self._agent.invoke({"messages": [HumanMessage(content=msg_content)]})
         messages = result.get("messages", [])
         answer: Optional[str] = None
         if messages:

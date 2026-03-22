@@ -2,10 +2,12 @@
 
 Welcome to **Bhupesh's Agentic RAG** - An End-to-End Retrieval-Augmented Generation system. This project implements a fully functional AI-powered search and answering engine utilizing state-of-the-art Large Language Models (LLMs) and Vector Databases.
 
-It features both a **Command Line Interface (CLI)** and a modern, beautifully designed **Streamlit Web Application** for interacting with the knowledge base.
+It features both a **Command Line Interface (CLI)** and a modern, beautifully designed **Streamlit Web Application**. **Users can easily upload their own files, ask relevant questions about the content, and receive accurate answers generated directly from the retrieved context.**
 
 ## 🚀 Features
 
+- **Dynamic File Uploads**: Instantly upload your documents directly through the UI to query their contents.
+- **Context-Aware QA**: Ask questions and get precise answers derived solely from the context of your uploaded files.
 - **Agentic Workflow**: Utilizes LangGraph to build intelligent routing and execution loops.
 - **Advanced Retrieval**: Uses FAISS for efficient, high-speed similarity search and vector storage.
 - **Top-Tier Embeddings**: Powered by Voyage AI embeddings (`voyage-4-large` or equivalent).

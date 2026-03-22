@@ -48,8 +48,8 @@ class AgenticRAG:
     
     def _setup_vectorstore(self):
         """Setup vector store with processed documents"""
-        print(f"📄 Processing {len(self.urls)} URLs...")
-        documents = self.doc_processor.process_urls(self.urls)
+        print(f"📄 Processing {len(self.urls)} sources...")
+        documents = self.doc_processor.process_sources(self.urls)
         print(f"📊 Created {len(documents)} document chunks")
         
         print("🔍 Creating vector store...")

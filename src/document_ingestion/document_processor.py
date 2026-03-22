@@ -48,7 +48,7 @@ class DocumentProcessor:
 
     def load_from_pdf(self, file_path: Union[str, Path]) -> List[Document]:
         """Load document(s) from a PDF file"""
-        loader = PyPDFDirectoryLoader(str("data"))
+        loader = PyPDFLoader(str(file_path), extract_images=True)
         return loader.load()
     
     def load_documents(self, sources: List[str]) -> List[Document]:
@@ -65,16 +65,19 @@ class DocumentProcessor:
         for src in sources:
             if src.startswith("http://") or src.startswith("https://"):
                 docs.extend(self.load_from_url(src))
+                continue
            
-            path = Path("data")
+            path = Path(src)
             if path.is_dir():  # PDF directory
                 docs.extend(self.load_from_pdf_dir(path))
             elif path.suffix.lower() == ".txt":
                 docs.extend(self.load_from_txt(path))
+            elif path.suffix.lower() == ".pdf":
+                docs.extend(self.load_from_pdf(path))
             else:
                 raise ValueError(
                     f"Unsupported source type: {src}. "
-                    "Use URL, .txt file, or PDF directory."
+                    "Use URL, .txt file, .pdf file, or PDF directory."
                 )
         return docs
     
@@ -90,15 +93,15 @@ class DocumentProcessor:
         """
         return self.splitter.split_documents(documents)
     
-    def process_urls(self, urls: List[str]) -> List[Document]:
+    def process_sources(self, sources: List[str]) -> List[Document]:
         """
         Complete pipeline to load and split documents
         
         Args:
-            urls: List of URLs to process
+            sources: List of URLs or file paths to process
             
         Returns:
             List of processed document chunks
         """
-        docs = self.load_documents(urls)
+        docs = self.load_documents(sources)
         return self.split_documents(docs)
