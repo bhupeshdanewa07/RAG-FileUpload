@@ -1,5 +1,7 @@
 # 🧠 Agentic RAG System
 
+### 🔗 [Live Link](https://bhupeshdanewa-ragfileupload.streamlit.app/)
+
 Welcome to **Bhupesh's Agentic RAG** - An End-to-End Retrieval-Augmented Generation system. This project implements a fully functional AI-powered search and answering engine utilizing state-of-the-art Large Language Models (LLMs) and Vector Databases.
 
 It features both a **Command Line Interface (CLI)** and a modern, beautifully designed **Streamlit Web Application**. **Users can easily upload their own files, ask relevant questions about the content, and receive accurate answers generated directly from the retrieved context.**
