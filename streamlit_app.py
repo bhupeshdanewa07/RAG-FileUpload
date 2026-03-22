@@ -216,39 +216,49 @@ def main():
     
     # Document Upload Section
     if not st.session_state.initialized:
-        st.markdown("### 📄 Upload Documents")
-        uploaded_files = st.file_uploader(
-            "Upload PDF or TXT files to create your knowledge base", 
-            type=["pdf", "txt"], 
-            accept_multiple_files=True
-        )
+        st.markdown("### 📄 Upload Documents or Provide URL")
         
-        process_btn = st.button("Process Documents")
+        col1, col2 = st.columns(2)
+        with col1:
+            uploaded_files = st.file_uploader(
+                "Upload PDF or TXT files", 
+                type=["pdf", "txt"], 
+                accept_multiple_files=True
+            )
+        with col2:
+            st.markdown("<br>", unsafe_allow_html=True) # Adds some visual padding
+            input_url = st.text_input("Or enter a Web URL", placeholder="https://example.com/article")
+            
+        process_btn = st.button("Process Knowledge Base")
         
-        if process_btn and uploaded_files:
-            with st.spinner("Processing documents..."):
-                # Create a temp dir
+        if process_btn and (uploaded_files or input_url):
+            with st.spinner("Processing sources..."):
+                # Create a temp dir for files
                 temp_dir = tempfile.mkdtemp()
-                file_paths = []
+                sources = []
                 
-                for uploaded_file in uploaded_files:
-                    file_path = os.path.join(temp_dir, uploaded_file.name)
-                    with open(file_path, "wb") as f:
-                        f.write(uploaded_file.getbuffer())
-                    file_paths.append(file_path)
+                if uploaded_files:
+                    for uploaded_file in uploaded_files:
+                        file_path = os.path.join(temp_dir, uploaded_file.name)
+                        with open(file_path, "wb") as f:
+                            f.write(uploaded_file.getbuffer())
+                        sources.append(file_path)
+                
+                if input_url:
+                    sources.append(input_url)
                 
                 # We use tuple for cache key compatibility
-                rag_system, num_chunks = initialize_rag(tuple(file_paths))
+                rag_system, num_chunks = initialize_rag(tuple(sources))
                 
                 if rag_system:
                     st.session_state.rag_system = rag_system
                     st.session_state.initialized = True
                     st.success(f"✅ System ready! ({num_chunks} document chunks loaded)")
                     st.rerun()
-        elif process_btn and not uploaded_files:
-            st.warning("Please upload at least one file before processing.")
+        elif process_btn and not (uploaded_files or input_url):
+            st.warning("Please upload at least one file or enter a valid URL before processing.")
         elif not st.session_state.initialized:
-            st.info("Please upload documents and click 'Process Documents' to initialize the knowledge base.")
+            st.info("Please provide documents or a URL and click 'Process Knowledge Base' to initialize.")
     else:
         st.success("✅ System is initialized and ready for your questions!")
         if st.button("Start Over (Upload New Documents)"):
