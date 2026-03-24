@@ -40,7 +40,7 @@ cd agentic-rag-system
 
 ### 2. Create a Virtual Environment (Recommended)
 
-```bash
+```bas
 python -m venv venv
 ```
 
